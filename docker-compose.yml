@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  vyfinance-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vyfinance-swap-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      # Blockfrost Configuration (default)
+      - BLOCKFROST_PROJECT_ID=${BLOCKFROST_PROJECT_ID}
+      - BLOCKFROST_URL=${BLOCKFROST_URL:-https://cardano-mainnet.blockfrost.io/api/v0}
+      # Kupo Configuration (optional, comment out if using Blockfrost)
+      # - KUPO_URL=${KUPO_URL}
+    env_file:
+      - .env
+    volumes:
+      # Mount .env file for easy configuration updates
+      - ./.env:/app/.env:ro
+    networks:
+      - vyfinance-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.vyfinance.description=VyFinance Swap API using Dexter SDK"
+      - "com.vyfinance.version=1.0.0"
+
+networks:
+  vyfinance-network:
+    driver: bridge
+
+# Optional: Add Kupo service if you want to run your own Cardano indexer
+# Uncomment below to run Kupo locally
+#
+# volumes:
+#   kupo-data:
+#
+# services:
+#   kupo:
+#     image: cardanosolutions/kupo:latest
+#     container_name: kupo
+#     restart: unless-stopped
+#     ports:
+#       - "1442:1442"
+#     volumes:
+#       - kupo-data:/data
+#     networks:
+#       - vyfinance-network
+#     command:
+#       - --node-socket=/ipc/node.socket
+#       - --node-config=/config/config.json
+#       - --host=0.0.0.0
+#       - --port=1442
+#       - --workdir=/data
+#       - --match=*
+#       - --since=origin
