@@ -54,12 +54,21 @@ const getDexterService = (): DexterService => {
     if (process.env.KUPO_URL) {
       console.log("Configuring Kupo provider...");
       dexterService.withKupoProvider({ url: process.env.KUPO_URL });
-    } else if (process.env.BLOCKFROST_PROJECT_ID && process.env.BLOCKFROST_URL) {
+    } else if (
+      process.env.BLOCKFROST_PROJECT_ID &&
+      process.env.BLOCKFROST_URL
+    ) {
       console.log("Configuring Blockfrost provider...");
-      dexterService.withBlockfrostProvider({
-        projectId: process.env.BLOCKFROST_PROJECT_ID,
-        url: process.env.BLOCKFROST_URL,
-      });
+      dexterService.withBlockfrostProvider(
+        {
+          projectId: process.env.BLOCKFROST_PROJECT_ID,
+          url: process.env.BLOCKFROST_URL,
+        },
+        {
+          timeout: 30000,
+          retries: 3,
+        }
+      );
     } else {
       const error = new Error(
         "No data provider configured. Set KUPO_URL or BLOCKFROST credentials in .env"
@@ -74,7 +83,8 @@ const getDexterService = (): DexterService => {
 
     return dexterService;
   } catch (error) {
-    initializationError = error instanceof Error ? error : new Error(String(error));
+    initializationError =
+      error instanceof Error ? error : new Error(String(error));
     throw initializationError;
   }
 };
